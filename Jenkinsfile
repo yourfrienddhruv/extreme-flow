@@ -27,7 +27,7 @@ node{
                         "JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m", "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]
 
             // First stage is actually checking out the source. Since we're using Multibranch currently, we can use "checkout scm".
-            stage "Get Source"
+            stage "Get Latest Source"
 
             checkout scm
 
