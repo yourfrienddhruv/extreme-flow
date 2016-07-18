@@ -65,15 +65,8 @@ node{
         currentBuild.result = "FAILURE"
     } finally {
        if (currentBuild.result != "ABORTED") {
-           final def RECIPIENTS = emailextrecipients([
-               [$class: 'DevelopersRecipientProvider'],
-               [$class: 'CulpritsRecipientProvider']
-           ])
+           final def RECIPIENTS = emailextrecipients([ [$class: 'DevelopersRecipientProvider'], [$class: 'CulpritsRecipientProvider'] ])
            step([$class: 'Mailer', notifyEveryUnstableBuild: true, sendToIndividuals: true, recipients: RECIPIENTS])
-        }
-        /* Must re-throw exception to propagate error */
-        if (err) {
-            throw err
         }
     }
 }
