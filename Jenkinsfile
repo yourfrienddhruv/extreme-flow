@@ -114,8 +114,8 @@ timeout(time:3, unit:'DAYS') {
 void withMavenEnv(List envVars = [], def body) {
     // The names here are currently aligned with Ambari default of version 2.4. This needs to be made more flexible.
     // Using the "tool" Workflow call automatically installs those tools on the node.
-    String mvntool = tool name: "mvn3.2.2", type: 'hudson.tasks.Maven$MavenInstallation'
-    String jdktool = tool name: "jdk8_40", type: 'hudson.model.JDK'
+    String mvntool = tool 'Maven 3.2.2'
+    String jdktool = tool 'jdk-8-oracle'
 
     // Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
     List mvnEnv = ["PATH+MVN=${mvntool}/bin", "PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}", "MAVEN_HOME=${mvntool}"]
