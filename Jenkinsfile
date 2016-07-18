@@ -12,18 +12,19 @@ properties([[$class: 'jenkins.model.BuildDiscarderProperty', strategy: [$class: 
                                                                         artifactNumToKeepStr: '20']]])
 
 
-// The names here are currently aligned with Ambari default of version 2.4. This needs to be made more flexible.
-// Using the "tool" Workflow call automatically installs those tools on the node.
-String mvntool = tool 'Maven_3.2.2'
-String jdktool = tool 'Jdk_8u40'
-
-// Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
-List buildEnv = ["PATH+MVN=${mvntool}/bin", "PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}", "MAVEN_HOME=${mvntool}",
-            "JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m", "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]
-
 node{
     //prints timestamps
     wrap([$class: 'TimestamperBuildWrapper']) {
+
+        // The names here are currently aligned with Ambari default of version 2.4. This needs to be made more flexible.
+        // Using the "tool" Workflow call automatically installs those tools on the node.
+        String mvntool = tool 'Maven_3.2.2'
+        String jdktool = tool 'Jdk_8u40'
+
+        // Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
+        List buildEnv = ["PATH+MVN=${mvntool}/bin", "PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}", "MAVEN_HOME=${mvntool}",
+                    "JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m", "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]
+
         // First stage is actually checking out the source. Since we're using Multibranch currently, we can use "checkout scm".
         stage "Checkout source"
 
