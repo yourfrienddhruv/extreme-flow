@@ -69,35 +69,35 @@ timeout(time:3, unit:'DAYS') {
                 sh "mvn validate"
             }
         }
-    } elseif (env.BRANCH_NAME.startsWith("release")) {
+    } else if (env.BRANCH_NAME.startsWith("release")) {
         node{
             withMavenEnv([]) {
                 echo "@TODO give option to finish release"
                 sh "mvn validate"
             }
         }
-    } elseif (env.BRANCH_NAME.startsWith("hotfix")) {
+    } else if (env.BRANCH_NAME.startsWith("hotfix")) {
         node{
             withMavenEnv([]) {
                 echo "@TODO give option to finish hotfix"
                 sh "mvn validate"
             }
         }
-    } elseif (env.BRANCH_NAME.startsWith("feature")) {
+    } else if (env.BRANCH_NAME.startsWith("feature")) {
         node{
             withMavenEnv([]) {
                 echo "@TODO give option to finish feature"
                 sh "mvn validate"
             }
         }
-    } elseif (env.BRANCH_NAME.startsWith("master")) {
+    } else if (env.BRANCH_NAME.startsWith("master")) {
         node{
             withMavenEnv([]) {
                 echo "@TODO give option to start hotfix"
                 sh "mvn validate"
             }
         }
-    } elseif (env.BRANCH_NAME.startsWith("support")) {
+    } else if (env.BRANCH_NAME.startsWith("support")) {
          node{
              withMavenEnv([]) {
                  echo "@TODO give option to start hotfix"
