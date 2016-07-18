@@ -10,113 +10,123 @@
 // Only keep the most recent builds.
 properties([[$class: 'jenkins.model.BuildDiscarderProperty', strategy: [$class: 'LogRotator', numToKeepStr: '10',
                                                                         artifactNumToKeepStr: '20']]])
-
+def PRE_CONFIGURED_GLOBAL_TOOL_MAVEN_ID = 'Maven_3.2.2'
+def PRE_CONFIGURED_GLOBAL_TOOL_JDK_ID   = 'Jdk_8u40'
 
 node{
-    //prints timestamps
-    wrap([$class: 'TimestamperBuildWrapper']) {
+    try{
+        //prints timestamps
+        wrap([$class: 'TimestamperBuildWrapper']) {
+            // The names here are currently aligned with Ambari default of version 2.4. This needs to be made more flexible.
+            // Using the "tool" Workflow call automatically installs those tools on the node.
+            String mvntool = tool PRE_CONFIGURED_GLOBAL_TOOL_MAVEN_ID
+            String jdktool = tool PRE_CONFIGURED_GLOBAL_TOOL_JDK_ID
 
-        // The names here are currently aligned with Ambari default of version 2.4. This needs to be made more flexible.
-        // Using the "tool" Workflow call automatically installs those tools on the node.
-        String mvntool = tool 'Maven_3.2.2'
-        String jdktool = tool 'Jdk_8u40'
+            // Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
+            List buildEnv = ["PATH+MVN=${mvntool}/bin", "PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}", "MAVEN_HOME=${mvntool}",
+                        "JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m", "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]
 
-        // Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
-        List buildEnv = ["PATH+MVN=${mvntool}/bin", "PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}", "MAVEN_HOME=${mvntool}",
-                    "JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m", "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]
+            // First stage is actually checking out the source. Since we're using Multibranch currently, we can use "checkout scm".
+            stage "Checkout source"
 
-        // First stage is actually checking out the source. Since we're using Multibranch currently, we can use "checkout scm".
-        stage "Checkout source"
+            checkout scm
 
-        checkout scm
+            // Now run the actual build.
+            stage "Build and test"
 
-        def v = versionOfProject()
-        echo "Building version ${v}"
+            timeout(time: 15, unit: 'MINUTES') {
+                // See below for what this method does - we're passing an arbitrary environment
+                // variable to it so that JAVA_OPTS and MAVEN_OPTS are set correctly.
+                withEnv(buildEnv) {
+                    // Actually run Maven!
+                    // The -Dmaven.repo.local=${pwd()}/.repository means that Maven will create a
+                    // .repository directory at the root of the build (which it gets from the
+                    // pwd() Workflow call) and use that for the local Maven repository.
+                    //sh "mvn  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
+                    sh "mvn  clean install  -Dmaven.test.failure.ignore=true -V -B"
+                }
+            }
 
-        // Now run the actual build.
-        stage "Build and test"
+            // Once we've built, archive the artifacts and the test results.
+            stage "Archive artifacts and test results"
 
-        timeout(time: 15, unit: 'MINUTES') {
-            // See below for what this method does - we're passing an arbitrary environment
-            // variable to it so that JAVA_OPTS and MAVEN_OPTS are set correctly.
-            withEnv(buildEnv) {
-                // Actually run Maven!
-                // The -Dmaven.repo.local=${pwd()}/.repository means that Maven will create a
-                // .repository directory at the root of the build (which it gets from the
-                // pwd() Workflow call) and use that for the local Maven repository.
-                //sh "mvn  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
-                sh "mvn  clean install  -Dmaven.test.failure.ignore=true -V -B"
+            step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar, **/target/*.tar.gz', fingerprint: true])
+            step([$class: 'JUnitResultArchiver', healthScaleFactor: 20.0, testResults: '**/target/surefire-reports/*.xml'])
+
+            stage "Quality Assurance"
+            timeout(time: 15, unit: 'MINUTES') {
+                withEnv(buildEnv) {
+                    //sh "mvn  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
+                    sh "mvn sonar:sonar"
+                }
             }
         }
-
-        // Once we've built, archive the artifacts and the test results.
-        stage "Archive artifacts and test results"
-
-        step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar, **/target/*.tar.gz', fingerprint: true])
-        step([$class: 'JUnitResultArchiver', healthScaleFactor: 20.0, testResults: '**/target/surefire-reports/*.xml'])
-
-        stage "Quality Assurance"
-        timeout(time: 15, unit: 'MINUTES') {
-            withEnv(buildEnv) {
-                //sh "mvn  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
-                sh "mvn sonar:sonar"
-            }
+    } catch (caughtError) {
+        currentBuild.result = "FAILURE"
+    } finally {
+       if (currentBuild.result != "ABORTED") {
+           final def RECIPIENTS = emailextrecipients([
+               [$class: 'DevelopersRecipientProvider'],
+               [$class: 'CulpritsRecipientProvider']
+           ])
+           step([$class: 'Mailer', notifyEveryUnstableBuild: true, sendToIndividuals: true, recipients: RECIPIENTS])
+        }
+        /* Must re-throw exception to propagate error */
+        if (err) {
+            throw err
         }
     }
 }
 
 if (currentBuild.result == null) {
-            //Build yet not failed
+    //Build yet not failed
     stage "Release Actions"
     timeout(time:3, unit:'DAYS') {
+        def v = versionOfProject()
+
         input message:'Do you want to take any Release related actions on version: ${v} ?'
 
-        if (env.BRANCH_NAME.startsWith("develop")) {
-            node{
+        node{
+            String mvntool = tool PRE_CONFIGURED_GLOBAL_TOOL_MAVEN_ID
+            String jdktool = tool PRE_CONFIGURED_GLOBAL_TOOL_JDK_ID
+
+            // Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
+            List buildEnv = ["PATH+MVN=${mvntool}/bin", "PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}", "MAVEN_HOME=${mvntool}"]
+
+            if (env.BRANCH_NAME.startsWith("develop")) {
                 withEnv(buildEnv) {
                     echo "@TODO give option to start release"
                     echo "@TODO give option to start features"
                     sh "mvn validate"
                 }
-            }
-        } else if (env.BRANCH_NAME.startsWith("release")) {
-            node{
+            } else if (env.BRANCH_NAME.startsWith("release")) {
                 withEnv(buildEnv) {
                     echo "@TODO give option to finish release"
                     sh "mvn validate"
                 }
-            }
-        } else if (env.BRANCH_NAME.startsWith("hotfix")) {
-            node{
+            } else if (env.BRANCH_NAME.startsWith("hotfix")) {
                 withEnv(buildEnv) {
                     echo "@TODO give option to finish hotfix"
                     sh "mvn validate"
                 }
-            }
-        } else if (env.BRANCH_NAME.startsWith("feature")) {
-            node{
+            } else if (env.BRANCH_NAME.startsWith("feature")) {
                 withEnv(buildEnv) {
                     echo "@TODO give option to finish feature"
                     sh "mvn validate"
                 }
-            }
-        } else if (env.BRANCH_NAME.startsWith("master")) {
-            node{
+            } else if (env.BRANCH_NAME.startsWith("master")) {
                 withEnv(buildEnv) {
                     echo "@TODO give option to start hotfix"
                     sh "mvn validate"
                 }
-            }
-        } else if (env.BRANCH_NAME.startsWith("support")) {
-             node{
+            } else if (env.BRANCH_NAME.startsWith("support")) {
                  withEnv(buildEnv) {
                      echo "@TODO give option to start hotfix"
                      sh "mvn validate"
                  }
-             }
-        }  else{
-            echo "Non-standard Git-Flow Branch, can't suggest any release actions."
-        }
+            }  else{
+                echo "Non-standard Git-Flow Branch, can't suggest any release actions."
+            }
     }
 }//else{ echo 'build is failed'  }
 
