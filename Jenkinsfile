@@ -27,12 +27,12 @@ node{
                         "JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m", "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]
 
             // First stage is actually checking out the source. Since we're using Multibranch currently, we can use "checkout scm".
-            stage "Checkout source"
+            stage "Get Source"
 
             checkout scm
 
             // Now run the actual build.
-            stage "Build and test"
+            stage "Build, Test & Package"
 
             timeout(time: 15, unit: 'MINUTES') {
                 // See below for what this method does - we're passing an arbitrary environment
