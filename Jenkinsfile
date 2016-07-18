@@ -44,7 +44,7 @@ node{
                 // The -Dmaven.repo.local=${pwd()}/.repository means that Maven will create a
                 // .repository directory at the root of the build (which it gets from the
                 // pwd() Workflow call) and use that for the local Maven repository.
-                //sh "mvn  clean install ${runTests ? '-Dmaven.test.failure.ignore=true -Dconcurrency=1' : '-DskipTests'} -V -B -Dmaven.repo.local=${pwd()}/.repository"
+                //sh "mvn  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
                 sh "mvn  clean install  -Dmaven.test.failure.ignore=true -V -B"
             }
         }
@@ -53,71 +53,72 @@ node{
         stage "Archive artifacts and test results"
 
         step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar, **/target/*.tar.gz', fingerprint: true])
-        if (runTests) {
-            step([$class: 'JUnitResultArchiver', healthScaleFactor: 20.0, testResults: '**/target/surefire-reports/*.xml'])
-        }
+        step([$class: 'JUnitResultArchiver', healthScaleFactor: 20.0, testResults: '**/target/surefire-reports/*.xml'])
 
         stage "Quality Assurance"
         timeout(time: 15, unit: 'MINUTES') {
             withEnv(buildEnv) {
-                //sh "mvn  clean install ${runTests ? '-Dmaven.test.failure.ignore=true -Dconcurrency=1' : '-DskipTests'} -V -B -Dmaven.repo.local=${pwd()}/.repository"
+                //sh "mvn  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
                 sh "mvn sonar:sonar"
             }
         }
     }
 }
 
-stage "Release Actions"
-timeout(time:3, unit:'DAYS') {
-    input message:'Do you want to take any Release related actions on version: ${v} ?'
+if (currentBuild.result == null) {
+            //Build yet not failed
+    stage "Release Actions"
+    timeout(time:3, unit:'DAYS') {
+        input message:'Do you want to take any Release related actions on version: ${v} ?'
 
-    if (env.BRANCH_NAME.startsWith("develop")) {
-        node{
-            withEnv(buildEnv) {
-                echo "@TODO give option to start release"
-                echo "@TODO give option to start features"
-                sh "mvn validate"
+        if (env.BRANCH_NAME.startsWith("develop")) {
+            node{
+                withEnv(buildEnv) {
+                    echo "@TODO give option to start release"
+                    echo "@TODO give option to start features"
+                    sh "mvn validate"
+                }
             }
-        }
-    } else if (env.BRANCH_NAME.startsWith("release")) {
-        node{
-            withEnv(buildEnv) {
-                echo "@TODO give option to finish release"
-                sh "mvn validate"
+        } else if (env.BRANCH_NAME.startsWith("release")) {
+            node{
+                withEnv(buildEnv) {
+                    echo "@TODO give option to finish release"
+                    sh "mvn validate"
+                }
             }
-        }
-    } else if (env.BRANCH_NAME.startsWith("hotfix")) {
-        node{
-            withEnv(buildEnv) {
-                echo "@TODO give option to finish hotfix"
-                sh "mvn validate"
+        } else if (env.BRANCH_NAME.startsWith("hotfix")) {
+            node{
+                withEnv(buildEnv) {
+                    echo "@TODO give option to finish hotfix"
+                    sh "mvn validate"
+                }
             }
-        }
-    } else if (env.BRANCH_NAME.startsWith("feature")) {
-        node{
-            withEnv(buildEnv) {
-                echo "@TODO give option to finish feature"
-                sh "mvn validate"
+        } else if (env.BRANCH_NAME.startsWith("feature")) {
+            node{
+                withEnv(buildEnv) {
+                    echo "@TODO give option to finish feature"
+                    sh "mvn validate"
+                }
             }
-        }
-    } else if (env.BRANCH_NAME.startsWith("master")) {
-        node{
-            withEnv(buildEnv) {
-                echo "@TODO give option to start hotfix"
-                sh "mvn validate"
+        } else if (env.BRANCH_NAME.startsWith("master")) {
+            node{
+                withEnv(buildEnv) {
+                    echo "@TODO give option to start hotfix"
+                    sh "mvn validate"
+                }
             }
-        }
-    } else if (env.BRANCH_NAME.startsWith("support")) {
-         node{
-             withEnv(buildEnv) {
-                 echo "@TODO give option to start hotfix"
-                 sh "mvn validate"
+        } else if (env.BRANCH_NAME.startsWith("support")) {
+             node{
+                 withEnv(buildEnv) {
+                     echo "@TODO give option to start hotfix"
+                     sh "mvn validate"
+                 }
              }
-         }
-    }  else{
-        echo "Non-standard Git-Flow Branch, can't suggest any release actions."
+        }  else{
+            echo "Non-standard Git-Flow Branch, can't suggest any release actions."
+        }
     }
-}
+}//else{ echo 'build is failed'  }
 
 def versionOfProject() {
   def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
