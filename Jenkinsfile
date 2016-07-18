@@ -45,7 +45,7 @@ node{
                 // .repository directory at the root of the build (which it gets from the
                 // pwd() Workflow call) and use that for the local Maven repository.
                 //sh "mvn  clean install ${runTests ? '-Dmaven.test.failure.ignore=true -Dconcurrency=1' : '-DskipTests'} -V -B -Dmaven.repo.local=${pwd()}/.repository"
-                sh "mvn  clean install ${runTests ? '-Dmaven.test.failure.ignore=true -Dconcurrency=1' : '-DskipTests'} -V -B"
+                sh "mvn  clean install  -Dmaven.test.failure.ignore=true -V -B"
             }
         }
 
