@@ -117,7 +117,7 @@
                 <version>1.0-m5.1</version>
                 <configuration>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <noDeploy></noDeploy>
+                    <noDeploy />
                     <pushFeatures>true</pushFeatures>
                     <pushReleases>true</pushReleases>
                     <pushHotfixes>true</pushHotfixes>
