@@ -116,9 +116,12 @@
                 <artifactId>jgitflow-maven-plugin</artifactId>
                 <version>1.0-m5.1</version>
                 <configuration>
-                    <autoversionsubmodules>true</autoversionsubmodules>
-                    <!--nodeploy>true</nodeploy-->
-                    <!--pushreleases>true</pushreleases-->
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <noDeploy></noDeploy>
+                    <pushFeatures>true</pushFeatures>
+                    <pushReleases>true</pushReleases>
+                    <pushHotfixes>true</pushHotfixes>
+                    <consistentProjectVersions>true</consistentProjectVersions>
                 </configuration>
             </plugin>
         </plugins>
