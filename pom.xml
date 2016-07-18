@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.3.2.RELEASE</version>
+        <version>1.0.0</version>
         <relativePath /> <!-- lookup parent from repository -->
     </parent>
 
@@ -117,7 +117,7 @@
                 <version>1.0-m5.1</version>
                 <configuration>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <noDeploy></noDeploy>
+                    <noDeploy />
                     <pushFeatures>true</pushFeatures>
                     <pushReleases>true</pushReleases>
                     <pushHotfixes>true</pushHotfixes>
