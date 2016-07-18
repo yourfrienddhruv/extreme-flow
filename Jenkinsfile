@@ -10,6 +10,17 @@
 // Only keep the most recent builds.
 properties([[$class: 'jenkins.model.BuildDiscarderProperty', strategy: [$class: 'LogRotator', numToKeepStr: '10',
                                                                         artifactNumToKeepStr: '20']]])
+
+
+// The names here are currently aligned with Ambari default of version 2.4. This needs to be made more flexible.
+// Using the "tool" Workflow call automatically installs those tools on the node.
+String mvntool = tool 'Maven_3.2.2'
+String jdktool = tool 'Jdk_8u40'
+
+// Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
+List buildEnv = ["PATH+MVN=${mvntool}/bin", "PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}", "MAVEN_HOME=${mvntool}",
+            "JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m", "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]
+
 node{
     //prints timestamps
     wrap([$class: 'TimestamperBuildWrapper']) {
@@ -18,17 +29,16 @@ node{
 
         checkout scm
 
-
         def v = versionOfProject()
+        echo "Building version ${v}"
 
         // Now run the actual build.
-        stage "Build and test ${v}"
+        stage "Build and test"
 
         timeout(time: 15, unit: 'MINUTES') {
             // See below for what this method does - we're passing an arbitrary environment
             // variable to it so that JAVA_OPTS and MAVEN_OPTS are set correctly.
-            withMavenEnv(["JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m",
-                          "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]) {
+            withEnv(buildEnv) {
                 // Actually run Maven!
                 // The -Dmaven.repo.local=${pwd()}/.repository means that Maven will create a
                 // .repository directory at the root of the build (which it gets from the
@@ -39,17 +49,16 @@ node{
         }
 
         // Once we've built, archive the artifacts and the test results.
-        stage "Archive artifacts and test results ${v}"
+        stage "Archive artifacts and test results"
 
         step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar, **/target/*.tar.gz', fingerprint: true])
         if (runTests) {
             step([$class: 'JUnitResultArchiver', healthScaleFactor: 20.0, testResults: '**/target/surefire-reports/*.xml'])
         }
 
-        stage "Quality Assurance ${v}"
+        stage "Quality Assurance"
         timeout(time: 15, unit: 'MINUTES') {
-            withMavenEnv(["JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m",
-                          "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]) {
+            withEnv(buildEnv) {
                 //sh "mvn  clean install ${runTests ? '-Dmaven.test.failure.ignore=true -Dconcurrency=1' : '-DskipTests'} -V -B -Dmaven.repo.local=${pwd()}/.repository"
                 sh "mvn sonar:sonar"
             }
@@ -57,13 +66,13 @@ node{
     }
 }
 
-stage "Release Actions ${v}"
+stage "Release Actions"
 timeout(time:3, unit:'DAYS') {
-    input message:'Do you want to take any Release related actions?'
+    input message:'Do you want to take any Release related actions on version: ${v} ?'
 
     if (env.BRANCH_NAME.startsWith("develop")) {
         node{
-            withMavenEnv([]) {
+            withEnv(buildEnv) {
                 echo "@TODO give option to start release"
                 echo "@TODO give option to start features"
                 sh "mvn validate"
@@ -71,61 +80,41 @@ timeout(time:3, unit:'DAYS') {
         }
     } else if (env.BRANCH_NAME.startsWith("release")) {
         node{
-            withMavenEnv([]) {
+            withEnv(buildEnv) {
                 echo "@TODO give option to finish release"
                 sh "mvn validate"
             }
         }
     } else if (env.BRANCH_NAME.startsWith("hotfix")) {
         node{
-            withMavenEnv([]) {
+            withEnv(buildEnv) {
                 echo "@TODO give option to finish hotfix"
                 sh "mvn validate"
             }
         }
     } else if (env.BRANCH_NAME.startsWith("feature")) {
         node{
-            withMavenEnv([]) {
+            withEnv(buildEnv) {
                 echo "@TODO give option to finish feature"
                 sh "mvn validate"
             }
         }
     } else if (env.BRANCH_NAME.startsWith("master")) {
         node{
-            withMavenEnv([]) {
+            withEnv(buildEnv) {
                 echo "@TODO give option to start hotfix"
                 sh "mvn validate"
             }
         }
     } else if (env.BRANCH_NAME.startsWith("support")) {
          node{
-             withMavenEnv([]) {
+             withEnv(buildEnv) {
                  echo "@TODO give option to start hotfix"
                  sh "mvn validate"
              }
          }
     }  else{
         echo "Non-standard Git-Flow Branch, can't suggest any release actions."
-    }
-}
-
-// This method sets up the Maven and JDK tools, puts them in the environment along with whatever other arbitrary
-// environment variables we passed in, and runs the body we passed in within that environment.
-void withMavenEnv(List envVars = [], def body) {
-    // The names here are currently aligned with Ambari default of version 2.4. This needs to be made more flexible.
-    // Using the "tool" Workflow call automatically installs those tools on the node.
-    String mvntool = tool 'Maven_3.2.2'
-    String jdktool = tool 'Jdk_8u40'
-
-    // Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
-    List mvnEnv = ["PATH+MVN=${mvntool}/bin", "PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}", "MAVEN_HOME=${mvntool}"]
-
-    // Add any additional environment variables.
-    mvnEnv.addAll(envVars)
-
-    // Invoke the body closure we're passed within the environment we've created.
-    withEnv(mvnEnv) {
-        body.call()
     }
 }
 
