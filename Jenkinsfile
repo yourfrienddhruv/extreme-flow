@@ -127,6 +127,7 @@ if (currentBuild.result == null) {
             }  else{
                 echo "Non-standard Git-Flow Branch, can't suggest any release actions."
             }
+        }
     }
 }//else{ echo 'build is failed'  }
 
