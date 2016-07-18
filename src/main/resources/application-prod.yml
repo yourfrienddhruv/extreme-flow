@@ -1,0 +1,21 @@
+spring:
+  profiles:
+    active: dev
+  datasource:
+      url: jdbc:h2:mem:prod-db;
+      driverClassName: org.h2.Driver
+      username: produser
+      password: prodpass
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
+    generate-ddl: false
+  h2:
+    console:
+      enabled: false
+      path: /h2-console
+  jackson:
+    serialization:
+      write_dates_as_timestamps: false
+app:
+    timezone: UTC

@@ -1,0 +1,32 @@
+info:
+  version: @pom.version@
+
+logging:
+  file: logs/spring-boot-workshop.log
+
+spring:
+  application:
+    name: @pom.artifactId@
+  boot:
+    admin:
+      url: http://localhost:9001
+      client:
+        management-url: http://localhost:8585
+        health-url: http://localhost:8585/health
+        service-url: http://localhost:8585
+  jackson:
+    serialization:
+      indent-output: true
+
+endpoints:
+  health:
+    sensitive: false
+  metrics:
+    enabled: true
+
+server:
+    port: 8585
+    context-path:
+
+metrics:
+    jmx.enabled: true
