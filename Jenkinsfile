@@ -48,7 +48,7 @@ node{
             }
 
             // Once we've built, archive the artifacts and the test results.
-            stage "Archive artifacts and test results"
+            stage "Archive Artifacts"
 
             step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar, **/target/*.tar.gz', fingerprint: true])
             step([$class: 'JUnitResultArchiver', healthScaleFactor: 20.0, testResults: '**/target/surefire-reports/*.xml'])
@@ -86,39 +86,44 @@ if (currentBuild.result == null) {
             // Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
             List buildEnv = ["PATH+MVN=${mvntool}/bin", "PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}", "MAVEN_HOME=${mvntool}"]
 
-            if (env.BRANCH_NAME.startsWith("develop")) {
-                withEnv(buildEnv) {
-                    echo "@TODO give option to start release"
-                    echo "@TODO give option to start features"
-                    sh "mvn validate"
+            ws{
+                //have to do step of last built workspace.
+                //@TODO ensure this is working on same node as build node.
+
+                if (env.BRANCH_NAME.startsWith("develop")) {
+                    withEnv(buildEnv) {
+                        echo "@TODO give option to start release"
+                        echo "@TODO give option to start features"
+                        sh "mvn validate"
+                    }
+                } else if (env.BRANCH_NAME.startsWith("release")) {
+                    withEnv(buildEnv) {
+                        echo "@TODO give option to finish release"
+                        sh "mvn validate"
+                    }
+                } else if (env.BRANCH_NAME.startsWith("hotfix")) {
+                    withEnv(buildEnv) {
+                        echo "@TODO give option to finish hotfix"
+                        sh "mvn validate"
+                    }
+                } else if (env.BRANCH_NAME.startsWith("feature")) {
+                    withEnv(buildEnv) {
+                        echo "@TODO give option to finish feature"
+                        sh "mvn validate"
+                    }
+                } else if (env.BRANCH_NAME.startsWith("master")) {
+                    withEnv(buildEnv) {
+                        echo "@TODO give option to start hotfix"
+                        sh "mvn validate"
+                    }
+                } else if (env.BRANCH_NAME.startsWith("support")) {
+                     withEnv(buildEnv) {
+                         echo "@TODO give option to start hotfix"
+                         sh "mvn validate"
+                     }
+                }  else{
+                    echo "Non-standard Git-Flow Branch, can't suggest any release actions."
                 }
-            } else if (env.BRANCH_NAME.startsWith("release")) {
-                withEnv(buildEnv) {
-                    echo "@TODO give option to finish release"
-                    sh "mvn validate"
-                }
-            } else if (env.BRANCH_NAME.startsWith("hotfix")) {
-                withEnv(buildEnv) {
-                    echo "@TODO give option to finish hotfix"
-                    sh "mvn validate"
-                }
-            } else if (env.BRANCH_NAME.startsWith("feature")) {
-                withEnv(buildEnv) {
-                    echo "@TODO give option to finish feature"
-                    sh "mvn validate"
-                }
-            } else if (env.BRANCH_NAME.startsWith("master")) {
-                withEnv(buildEnv) {
-                    echo "@TODO give option to start hotfix"
-                    sh "mvn validate"
-                }
-            } else if (env.BRANCH_NAME.startsWith("support")) {
-                 withEnv(buildEnv) {
-                     echo "@TODO give option to start hotfix"
-                     sh "mvn validate"
-                 }
-            }  else{
-                echo "Non-standard Git-Flow Branch, can't suggest any release actions."
             }
         }
     }
