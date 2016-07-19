@@ -4,7 +4,7 @@
 
     <groupId>com.meetup</groupId>
     <artifactId>spring-boot-workshop</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>spring-boot-workshop</name>
     <description>Spring Boot Workshop</description>
 
