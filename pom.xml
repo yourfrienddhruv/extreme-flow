@@ -114,11 +114,16 @@
             <plugin>
                 <groupId>external.atlassian.jgitflow</groupId>
                 <artifactId>jgitflow-maven-plugin</artifactId>
-                <version>1.0-m5.1</version>
+                <!-- not released yet version>1.0-m6</version -->
+                <version>1.0-m4</version>
                 <configuration>
-                    <autoversionsubmodules>true</autoversionsubmodules>
-                    <!--nodeploy>true</nodeploy-->
-                    <!--pushreleases>true</pushreleases-->
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <noDeploy>true</noDeploy>
+                    <pushFeatures>true</pushFeatures>
+                    <pushReleases>true</pushReleases>
+                    <pushHotfixes>true</pushHotfixes>
+                    <allowUntracked>true</allowUntracked>
+                    <!-- can't use with spring parent as of now consistentProjectVersions>true</consistentProjectVersions-->
                 </configuration>
             </plugin>
         </plugins>
