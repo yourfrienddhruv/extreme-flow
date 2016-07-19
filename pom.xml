@@ -4,7 +4,7 @@
 
     <groupId>com.meetup</groupId>
     <artifactId>spring-boot-workshop</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.0-SNAPSHOT</version>
     <name>spring-boot-workshop</name>
     <description>Spring Boot Workshop</description>
 
@@ -117,10 +117,11 @@
                 <version>1.0-m5.1</version>
                 <configuration>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <noDeploy />
+                    <noDeploy>true</noDeploy>
                     <pushFeatures>true</pushFeatures>
                     <pushReleases>true</pushReleases>
                     <pushHotfixes>true</pushHotfixes>
+                    <allowUntracked>true</allowUntracked>
                     <!-- can't use with spring parent as of now consistentProjectVersions>true</consistentProjectVersions-->
                 </configuration>
             </plugin>

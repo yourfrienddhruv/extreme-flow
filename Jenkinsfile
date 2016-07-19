@@ -67,43 +67,28 @@ node{
                 stage "Release Actions"
                 timeout(time:5, unit:'MINUTES') {
                     def v = versionOfProject()
-                    input message:'Do you want to take any Release related actions on version: ${v} ?'
 
                     //@TODO input should be done out-side of node to not to block other builds
-
-                    if (env.BRANCH_NAME.startsWith("develop")) {
-                        withEnv(buildEnv) {
-                            echo "@TODO give option to start release"
-                            echo "@TODO give option to start features"
-                            sh "mvn validate"
+                    withEnv(buildEnv) {
+                        if (env.BRANCH_NAME.startsWith("develop")) {
+                            echo "You can : Release start manually using :  mvn clean jgitflow:release-start"
+                            echo "You can : Feature start manually using :  mvn clean jgitflow:feature-start"
+                        } else if (env.BRANCH_NAME.startsWith("release")) {
+                            input message: v + ' : Finish Release ?'
+                            sh "mvn clean jgitflow:release-finish"
+                        } else if (env.BRANCH_NAME.startsWith("hotfix")) {
+                            input message: v + ' : Finish Hotfix ?'
+                            sh "mvn clean jgitflow:hotfix-finish"
+                        } else if (env.BRANCH_NAME.startsWith("feature")) {
+                            input message: v + ' : Finish Feature ?'
+                            sh "mvn clean jgitflow:feature-finish"
+                        } else if (env.BRANCH_NAME.startsWith("master")) {
+                            echo "You can :  Hotfix start manually using :  mvn clean jgitflow:hotfix-start"
+                        } else if (env.BRANCH_NAME.startsWith("support")) {
+                             echo "You can :  Hotfix start manually using :  mvn clean jgitflow:hotfix-start"
+                        } else{
+                            echo "Non-standard Git-Flow Branch, can't suggest any release actions."
                         }
-                    } else if (env.BRANCH_NAME.startsWith("release")) {
-                        withEnv(buildEnv) {
-                            echo "@TODO give option to finish release"
-                            sh "mvn validate"
-                        }
-                    } else if (env.BRANCH_NAME.startsWith("hotfix")) {
-                        withEnv(buildEnv) {
-                            echo "@TODO give option to finish hotfix"
-                            sh "mvn validate"
-                        }
-                    } else if (env.BRANCH_NAME.startsWith("feature")) {
-                        withEnv(buildEnv) {
-                            echo "@TODO give option to finish feature"
-                            sh "mvn validate"
-                        }
-                    } else if (env.BRANCH_NAME.startsWith("master")) {
-                        withEnv(buildEnv) {
-                            echo "@TODO give option to start hotfix"
-                            sh "mvn validate"
-                        }
-                    } else if (env.BRANCH_NAME.startsWith("support")) {
-                         withEnv(buildEnv) {
-                             echo "@TODO give option to start hotfix"
-                             sh "mvn validate"
-                         }
-                    }  else{
-                        echo "Non-standard Git-Flow Branch, can't suggest any release actions."
                     }
                 }
             }else{
