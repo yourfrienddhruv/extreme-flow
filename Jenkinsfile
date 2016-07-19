@@ -14,7 +14,6 @@ def PRE_CONFIGURED_GLOBAL_TOOL_MAVEN_ID = 'Maven_3.2.2'
 def PRE_CONFIGURED_GLOBAL_TOOL_JDK_ID   = 'Jdk_8u40'
 
 node{
-    try{
         //prints timestamps
         wrap([$class: 'TimestamperBuildWrapper']) {
             // The names here are currently aligned with Ambari default of version 2.4. This needs to be made more flexible.
@@ -75,13 +74,13 @@ node{
                             echo "You can : Feature start manually using :  mvn clean jgitflow:feature-start"
                         } else if (env.BRANCH_NAME.startsWith("release")) {
                             input message: v + ' : Finish Release ?'
-                            sh "mvn clean jgitflow:release-finish"
+                            sh "mvn clean jgitflow:release-finish  -V -B"
                         } else if (env.BRANCH_NAME.startsWith("hotfix")) {
                             input message: v + ' : Finish Hotfix ?'
-                            sh "mvn clean jgitflow:hotfix-finish"
+                            sh "mvn clean jgitflow:hotfix-finish  -V -B"
                         } else if (env.BRANCH_NAME.startsWith("feature")) {
                             input message: v + ' : Finish Feature ?'
-                            sh "mvn clean jgitflow:feature-finish"
+                            sh "mvn clean jgitflow:feature-finish  -V -B"
                         } else if (env.BRANCH_NAME.startsWith("master")) {
                             echo "You can :  Hotfix start manually using :  mvn clean jgitflow:hotfix-start"
                         } else if (env.BRANCH_NAME.startsWith("support")) {
@@ -95,15 +94,10 @@ node{
                 echo 'No release steps can be done on failed build.'
             }
         }
-    } catch (caughtError) {
-        currentBuild.result = "FAILURE"
-    } finally {
-       if (currentBuild.result != "ABORTED") {
-           final def RECIPIENTS = emailextrecipients([ [$class: 'DevelopersRecipientProvider'], [$class: 'CulpritsRecipientProvider'] ])
-           step([$class: 'Mailer', notifyEveryUnstableBuild: true, sendToIndividuals: true, recipients: RECIPIENTS])
-        }
+    if (currentBuild.result != "ABORTED") {
+       final def RECIPIENTS = emailextrecipients([ [$class: 'DevelopersRecipientProvider'], [$class: 'CulpritsRecipientProvider'] ])
+       step([$class: 'Mailer', notifyEveryUnstableBuild: true, sendToIndividuals: true, recipients: RECIPIENTS])
     }
-
 }
 
 def versionOfProject() {
