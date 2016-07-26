@@ -10,7 +10,6 @@
 // Only keep the most recent builds.
 properties([[$class: 'jenkins.model.BuildDiscarderProperty', strategy: [$class: 'LogRotator', numToKeepStr: '10',
                                                                         artifactNumToKeepStr: '20']]])
-def PRE_CONFIGURED_GLOBAL_TOOL_MAVEN_ID = 'Maven_3.2.2'
 def PRE_CONFIGURED_GLOBAL_TOOL_JDK_ID   = 'Jdk_8u40'
 
 node{
@@ -18,11 +17,10 @@ node{
         wrap([$class: 'TimestamperBuildWrapper']) {
             // The names here are currently aligned with Ambari default of version 2.4. This needs to be made more flexible.
             // Using the "tool" Workflow call automatically installs those tools on the node.
-            String mvntool = tool PRE_CONFIGURED_GLOBAL_TOOL_MAVEN_ID
             String jdktool = tool PRE_CONFIGURED_GLOBAL_TOOL_JDK_ID
 
             // Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
-            List buildEnv = ["PATH+MVN=${mvntool}/bin", "PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}", "MAVEN_HOME=${mvntool}",
+            List buildEnv = ["PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}",
                         "JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m", "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]
 
             // First stage is actually checking out the source. Since we're using Multibranch currently, we can use "checkout scm".
@@ -43,8 +41,8 @@ node{
                     // The -Dmaven.repo.local=${pwd()}/.repository means that Maven will create a
                     // .repository directory at the root of the build (which it gets from the
                     // pwd() Workflow call) and use that for the local Maven repository.
-                    //sh "mvn  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
-                    sh "mvn  clean install  -Dmaven.test.failure.ignore=true -V -B"
+                    //sh "./mvnw  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
+                    sh "./mvnw  clean install  -Dmaven.test.failure.ignore=true -V -B"
                 }
             }
 
@@ -57,8 +55,8 @@ node{
             stage "Quality Assurance"
             timeout(time: 15, unit: 'MINUTES') {
                 withEnv(buildEnv) {
-                    //sh "mvn  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
-                    sh "mvn sonar:sonar"
+                    //sh "./mvnw  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
+                    sh "./mvnw sonar:sonar"
                 }
             }
             if (currentBuild.result == null) {
@@ -70,21 +68,21 @@ node{
                     //@TODO input should be done out-side of node to not to block other builds
                     withEnv(buildEnv) {
                         if (env.BRANCH_NAME.startsWith("develop")) {
-                            echo "You can : Release start manually using :  mvn clean jgitflow:release-start"
-                            echo "You can : Feature start manually using :  mvn clean jgitflow:feature-start"
+                            echo "You can : Release start manually using :  ./mvnw clean jgitflow:release-start"
+                            echo "You can : Feature start manually using :  ./mvnw clean jgitflow:feature-start"
                         } else if (env.BRANCH_NAME.startsWith("release")) {
                             input message: v + ' : Finish Release ?'
-                            sh "mvn clean jgitflow:release-finish  -V -B"
+                            sh "./mvnw clean jgitflow:release-finish  -V -B"
                         } else if (env.BRANCH_NAME.startsWith("hotfix")) {
                             input message: v + ' : Finish Hotfix ?'
-                            sh "mvn clean jgitflow:hotfix-finish  -V -B"
+                            sh "./mvnw clean jgitflow:hotfix-finish  -V -B"
                         } else if (env.BRANCH_NAME.startsWith("feature")) {
                             input message: v + ' : Finish Feature ?'
-                            sh "mvn clean jgitflow:feature-finish  -V -B"
+                            sh "./mvnw clean jgitflow:feature-finish  -V -B"
                         } else if (env.BRANCH_NAME.startsWith("master")) {
-                            echo "You can :  Hotfix start manually using :  mvn clean jgitflow:hotfix-start"
+                            echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start"
                         } else if (env.BRANCH_NAME.startsWith("support")) {
-                             echo "You can :  Hotfix start manually using :  mvn clean jgitflow:hotfix-start"
+                             echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start"
                         } else{
                             echo "Non-standard Git-Flow Branch, can't suggest any release actions."
                         }
@@ -93,11 +91,9 @@ node{
             }else{
                 echo 'No release steps can be done on failed build.'
             }
+            final def RECIPIENTS = emailextrecipients([ [$class: 'DevelopersRecipientProvider'], [$class: 'CulpritsRecipientProvider'] ])
+            step([$class: 'Mailer', notifyEveryUnstableBuild: true, sendToIndividuals: true, recipients: RECIPIENTS])
         }
-    if (currentBuild.result != "ABORTED") {
-       final def RECIPIENTS = emailextrecipients([ [$class: 'DevelopersRecipientProvider'], [$class: 'CulpritsRecipientProvider'] ])
-       step([$class: 'Mailer', notifyEveryUnstableBuild: true, sendToIndividuals: true, recipients: RECIPIENTS])
-    }
 }
 
 def versionOfProject() {
