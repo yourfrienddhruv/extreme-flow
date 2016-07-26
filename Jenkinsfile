@@ -21,7 +21,9 @@ node{
 
             // Set JAVA_HOME, MAVEN_HOME and special PATH variables for the tools we're  using.
             List buildEnv = ["PATH+JDK=${jdktool}/bin", "JAVA_HOME=${jdktool}",
-                        "JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m", "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m"]
+                        "JAVA_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m",
+                             //"MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m "]
+                             "MAVEN_OPTS=-Xmx1536m -Xms512m -XX:MaxPermSize=1024m -V -B -Dmaven.repo.local=${pwd()}/.repository"]
 
             // First stage is actually checking out the source. Since we're using Multibranch currently, we can use "checkout scm".
             stage "Get Latest Source"
@@ -41,8 +43,8 @@ node{
                     // The -Dmaven.repo.local=${pwd()}/.repository means that Maven will create a
                     // .repository directory at the root of the build (which it gets from the
                     // pwd() Workflow call) and use that for the local Maven repository.
-                    //sh "./mvnw  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
-                    sh "./mvnw  clean install  -Dmaven.test.failure.ignore=true -V -B"
+                    //sh "./mvnw  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 "
+                    sh "./mvnw  clean install  -Dmaven.test.failure.ignore=true"
                 }
             }
 
@@ -55,7 +57,6 @@ node{
             stage "Quality Assurance"
             timeout(time: 15, unit: 'MINUTES') {
                 withEnv(buildEnv) {
-                    //sh "./mvnw  clean install -Dmaven.test.failure.ignore=true -Dconcurrency=1 -V -B -Dmaven.repo.local=${pwd()}/.repository"
                     sh "./mvnw sonar:sonar"
                 }
             }
@@ -72,13 +73,13 @@ node{
                             echo "You can : Feature start manually using :  ./mvnw clean jgitflow:feature-start"
                         } else if (env.BRANCH_NAME.startsWith("release")) {
                             input message: v + ' : Finish Release ?'
-                            sh "./mvnw clean jgitflow:release-finish  -V -B"
+                            sh "./mvnw clean jgitflow:release-finish  "
                         } else if (env.BRANCH_NAME.startsWith("hotfix")) {
                             input message: v + ' : Finish Hotfix ?'
-                            sh "./mvnw clean jgitflow:hotfix-finish  -V -B"
+                            sh "./mvnw clean jgitflow:hotfix-finish  "
                         } else if (env.BRANCH_NAME.startsWith("feature")) {
                             input message: v + ' : Finish Feature ?'
-                            sh "./mvnw clean jgitflow:feature-finish  -V -B"
+                            sh "./mvnw clean jgitflow:feature-finish  "
                         } else if (env.BRANCH_NAME.startsWith("master")) {
                             echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start"
                         } else if (env.BRANCH_NAME.startsWith("support")) {
