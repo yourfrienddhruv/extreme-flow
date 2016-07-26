@@ -79,9 +79,9 @@ node{
                             input message: v + ' : Finish Feature ?'
                             sh "./mvnw clean jgitflow:feature-finish  -V -B " //-Dmaven.repo.local=${pwd()}/.repository"
                         } else if (env.BRANCH_NAME.startsWith("master")) {
-                            echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start"
+                            echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start -V -B"
                         } else if (env.BRANCH_NAME.startsWith("support")) {
-                             echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start"
+                             echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start -V -B"
                         } else{
                             echo "Non-standard Git-Flow Branch, can't suggest any release actions."
                         }
