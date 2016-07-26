@@ -66,8 +66,9 @@ node{
                     //@TODO input should be done out-side of node to not to block other builds
                     withEnv(buildEnv) {
                         if (env.BRANCH_NAME.startsWith("develop")) {
-                            echo "You can : Release start manually using :  ./mvnw clean jgitflow:release-start"
-                            echo "You can : Feature start manually using :  ./mvnw clean jgitflow:feature-start"
+                            echo "Developer can : start a Feature manually using :  ./mvnw clean jgitflow:feature-start -V -B"
+                            input message: v + ' : Want to star new Release ?'
+                            sh "./mvnw clean jgitflow:release-start -V -B"
                         } else if (env.BRANCH_NAME.startsWith("release")) {
                             input message: v + ' : Finish Release ?'
                             sh "./mvnw clean jgitflow:release-finish -V -B " //-Dmaven.repo.local=${pwd()}/.repository"
@@ -78,9 +79,9 @@ node{
                             input message: v + ' : Finish Feature ?'
                             sh "./mvnw clean jgitflow:feature-finish  -V -B " //-Dmaven.repo.local=${pwd()}/.repository"
                         } else if (env.BRANCH_NAME.startsWith("master")) {
-                            echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start"
+                            echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start -V -B"
                         } else if (env.BRANCH_NAME.startsWith("support")) {
-                             echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start"
+                             echo "You can :  Hotfix start manually using :  ./mvnw clean jgitflow:hotfix-start -V -B"
                         } else{
                             echo "Non-standard Git-Flow Branch, can't suggest any release actions."
                         }
